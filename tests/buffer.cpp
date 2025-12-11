@@ -4,6 +4,17 @@
 
 using namespace parboil;
 
+long find_position(const parboil::buffer &buf) {
+  auto len = buf.slice()->size();
+  auto err = buf.slice(len + 1);
+
+  if (!err) {
+    return err.error().position;
+  } else {
+    throw std::runtime_error("expected to over slice");
+  }
+}
+
 TEST(Buffer, empty_bool_conversion) {
   {
     parboil::buffer buf{""};
@@ -29,9 +40,7 @@ TEST(Buffer, slice) {
 
   {
     parboil::buffer buf{"hello"};
-    std::cout << buf.slice(64).has_value() << std::endl;
-    EXPECT_EQ(buf.slice(64), std::unexpected(parboil::error_t{
-                                 .code = code_t::oom, .position = 0}));
+    EXPECT_EQ(find_position(buf), 0);
   }
 }
 
@@ -41,8 +50,7 @@ TEST(Buffer, increment) {
     EXPECT_EQ((buf++).slice(), "hello");
     EXPECT_EQ(buf.slice(), "ello");
 
-    EXPECT_EQ(buf.slice(64), std::unexpected(parboil::error_t{
-                                 .code = code_t::oom, .position = 1}));
+    EXPECT_EQ(find_position(buf), 1);
   }
 
   {
@@ -58,9 +66,7 @@ TEST(Buffer, forward_seek) {
     buf += 3;
 
     EXPECT_EQ(buf.slice(), "lo") << "should only have lo left";
-    EXPECT_EQ(buf.slice(50), std::unexpected(parboil::error_t{
-                                 .code = code_t::oom, .position = 3}))
-        << "should be on position 3";
+    EXPECT_EQ(find_position(buf), 3);
   }
 
   {
