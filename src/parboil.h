@@ -5,12 +5,19 @@
 #include <expected>
 
 namespace parboil {
-enum class code : std::uint64_t {
+enum class code_t : std::uint64_t {
   expected,
   oom,
 };
 
-template <typename T> using result = std::expected<T, code>;
+struct error_t {
+  code_t code;
+  std::size_t position;
+
+  bool operator==(const error_t &) const;
+};
+
+template <typename T> using result = std::expected<T, error_t>;
 
 } // namespace parboil
 
