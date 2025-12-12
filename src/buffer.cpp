@@ -35,6 +35,14 @@ buffer buffer::operator++(int) noexcept {
   return res;
 }
 
+char buffer::operator*() noexcept {
+  if (len == 0) {
+    return 0;
+  }
+
+  return *rel;
+}
+
 result<std::string_view> buffer::slice() const noexcept {
   return std::string_view(rel, len);
 }

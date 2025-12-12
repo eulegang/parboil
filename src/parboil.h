@@ -32,6 +32,7 @@ struct buffer {
   buffer &operator+=(std::size_t) noexcept;
   buffer &operator++() noexcept;
   buffer operator++(int) noexcept;
+  char operator*() noexcept;
   operator bool() noexcept;
 
   result<std::string_view> slice() const noexcept;
@@ -121,6 +122,153 @@ template <SubParser T, SubParser Sep, bool nonempty = false> struct sep {
         return value;
       }
     }
+  }
+};
+
+enum class byte_size {
+  byte,
+  word,
+  dword,
+  qword,
+};
+
+enum class base {
+  bin,
+  oct,
+  dec,
+  hex,
+};
+
+template <byte_size size, bool sign> struct num_type {};
+template <> struct num_type<byte_size::byte, false> {
+  using value = uint8_t;
+};
+template <> struct num_type<byte_size::word, false> {
+  using value = uint16_t;
+};
+template <> struct num_type<byte_size::dword, false> {
+  using value = uint32_t;
+};
+template <> struct num_type<byte_size::qword, false> {
+  using value = uint64_t;
+};
+
+template <> struct num_type<byte_size::byte, true> {
+  using value = int8_t;
+};
+template <> struct num_type<byte_size::word, true> {
+  using value = int16_t;
+};
+template <> struct num_type<byte_size::dword, true> {
+  using value = int32_t;
+};
+template <> struct num_type<byte_size::qword, true> {
+  using value = int64_t;
+};
+
+template <base base> struct injester {
+  uint64_t value;
+
+  injester() : value{0} {}
+
+  bool injest(char input) { return false; };
+};
+
+template <> struct injester<base::hex> {
+  uint64_t value;
+  injester() : value{0} {}
+
+  bool injest(char input) {
+    uint64_t i;
+
+    if ('0' <= input && input <= '9') {
+      i = input - '0';
+    } else if ('a' <= input && input <= 'f') {
+      i = input - 'a' + 10;
+    } else if ('A' <= input && input <= 'F') {
+      i = input - 'A' + 10;
+    } else {
+      return false;
+    }
+
+    value *= 16;
+    value += i;
+
+    return true;
+  }
+};
+
+template <> struct injester<base::dec> {
+  uint64_t value;
+  injester() : value{0} {}
+
+  bool injest(char input) {
+
+    if (input < '0' || input > '9') {
+      return false;
+    }
+
+    value *= 10;
+    value += input - '0';
+
+    return true;
+  }
+};
+
+template <> struct injester<base::oct> {
+  uint64_t value;
+  injester() : value{0} {}
+
+  bool injest(char input) {
+    if (input < '0' || input > '7') {
+      return false;
+    }
+
+    value *= 8;
+    value += input - '0';
+
+    return true;
+  }
+};
+
+template <> struct injester<base::bin> {
+  uint64_t value;
+  injester() : value{0} {}
+
+  bool injest(char input) {
+    if (input < '0' || input > '1') {
+      return false;
+    }
+
+    value *= 2;
+    value += input - '0';
+
+    return true;
+  }
+};
+
+template <byte_size size = byte_size::qword, base base = base::dec,
+          bool sign = true>
+struct number {
+  using Value = num_type<size, sign>::value;
+
+  static result<Value> parse(buffer &buf) {
+    bool neg = false;
+    injester<base> injester;
+
+    if (sign) {
+      if (*buf == '-') {
+        neg = true;
+        buf++;
+      }
+    }
+
+    while (injester.injest(*buf++))
+      ;
+
+    Value v = static_cast<Value>(injester.value);
+
+    return neg ? -v : v;
   }
 };
 
