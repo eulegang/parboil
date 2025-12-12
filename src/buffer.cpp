@@ -1,6 +1,4 @@
-
-#include "buffer.h"
-
+#include "parboil.h"
 #include <cmath>
 
 using namespace parboil;
@@ -36,7 +34,7 @@ buffer buffer::operator++(int) noexcept {
 
 result<std::string_view> buffer::slice() const noexcept { return view; }
 result<std::string_view> buffer::slice(std::size_t len) const noexcept {
-  if (len >= view.size()) {
+  if (len > view.size()) {
     return std::unexpected(error_t{.code = code_t::oom, .position = pos});
   }
 
