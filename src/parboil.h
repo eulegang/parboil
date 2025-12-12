@@ -2,6 +2,7 @@
 #define PARBOIL_H
 
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <expected>
 #include <string_view>
@@ -24,7 +25,10 @@ struct error_t {
 template <typename T> using result = std::expected<T, error_t>;
 
 struct buffer {
-  buffer(std::string_view view) : view{view}, pos{0} {}
+  buffer(std::string_view view)
+      : rel{view.data()}, len{static_cast<uint32_t>(view.size())}, pos{0} {
+    assert(view.size() < UINT32_MAX);
+  }
   buffer &operator+=(std::size_t) noexcept;
   buffer &operator++() noexcept;
   buffer operator++(int) noexcept;
@@ -34,8 +38,9 @@ struct buffer {
   result<std::string_view> slice(std::size_t) const noexcept;
 
 private:
-  std::string_view view;
-  size_t pos;
+  const char *rel;
+  uint32_t len;
+  uint32_t pos;
 };
 
 template <typename T>

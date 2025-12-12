@@ -11,3 +11,5 @@ template <typename T> constexpr bool is_sub_parser_v = is_sub_parser<T>::value;
 
 static_assert(is_sub_parser_v<keyword<"type">>);
 static_assert(is_sub_parser_v<sep<keyword<"type">, keyword<",">>>);
+
+static_assert(sizeof(buffer) == 16);
