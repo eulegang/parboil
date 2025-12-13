@@ -8,6 +8,7 @@
 #include <iostream>
 #include <optional>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 namespace parboil {
@@ -316,6 +317,49 @@ template <SubParser T> struct opt {
     } else {
       return *res;
     }
+  }
+};
+
+template <SubParser T> using _GetSubParserValue = T::Value;
+
+template <SubParser... T> struct seq;
+
+template <SubParser First, SubParser... Rest> struct seq<First, Rest...> {
+  using Value = std::tuple<typename First::Value, _GetSubParserValue<Rest>...>;
+
+  static result<Value> parse(buffer &buf) {
+    buffer snapshot(buf);
+    auto first = First::parse(buf);
+
+    if (!first) {
+      buf = snapshot;
+      return std::unexpected(buf.make_error(code_t::expected));
+    }
+
+    auto rest = seq<Rest...>::parse(buf);
+
+    if (!rest) {
+      buf = snapshot;
+      return std::unexpected(buf.make_error(code_t::expected));
+    }
+
+    return std::tuple_cat(std::tie(*first), *rest);
+  }
+};
+
+template <SubParser T> struct seq<T> {
+  using Value = std::tuple<typename T::Value>;
+
+  static result<Value> parse(buffer &buf) {
+    buffer snapshot(buf);
+    auto only = T::parse(buf);
+
+    if (!only) {
+      buf = snapshot;
+      return std::unexpected(buf.make_error(code_t::expected));
+    }
+
+    return std::tie(*only);
   }
 };
 
