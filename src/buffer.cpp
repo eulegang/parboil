@@ -54,3 +54,7 @@ result<std::string_view> buffer::slice(std::size_t sub_len) const noexcept {
 
   return std::string_view(rel, sub_len);
 }
+
+error_t buffer::make_error(code_t code) const noexcept {
+  return (error_t){.code = code, .position = pos};
+}

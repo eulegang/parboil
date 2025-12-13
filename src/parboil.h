@@ -13,6 +13,7 @@ namespace parboil {
 enum class code_t : std::uint64_t {
   expected,
   oom,
+  overflow,
 };
 
 struct error_t {
@@ -35,6 +36,7 @@ struct buffer {
   char operator*() noexcept;
   operator bool() noexcept;
 
+  error_t make_error(code_t) const noexcept;
   result<std::string_view> slice() const noexcept;
   result<std::string_view> slice(std::size_t) const noexcept;
 
@@ -142,28 +144,36 @@ enum class base {
 template <byte_size size, bool sign> struct num_type {};
 template <> struct num_type<byte_size::byte, false> {
   using value = uint8_t;
+  static const uint64_t MAX_VALUE = UINT8_MAX;
 };
 template <> struct num_type<byte_size::word, false> {
   using value = uint16_t;
+  static const uint64_t MAX_VALUE = UINT16_MAX;
 };
 template <> struct num_type<byte_size::dword, false> {
   using value = uint32_t;
+  static const uint64_t MAX_VALUE = UINT32_MAX;
 };
 template <> struct num_type<byte_size::qword, false> {
   using value = uint64_t;
+  static const uint64_t MAX_VALUE = UINT64_MAX;
 };
 
 template <> struct num_type<byte_size::byte, true> {
   using value = int8_t;
+  static const uint64_t MAX_VALUE = INT8_MAX;
 };
 template <> struct num_type<byte_size::word, true> {
   using value = int16_t;
+  static const uint64_t MAX_VALUE = INT16_MAX;
 };
 template <> struct num_type<byte_size::dword, true> {
   using value = int32_t;
+  static const uint64_t MAX_VALUE = INT32_MAX;
 };
 template <> struct num_type<byte_size::qword, true> {
   using value = int64_t;
+  static const uint64_t MAX_VALUE = INT64_MAX;
 };
 
 template <base base> struct injester {
@@ -250,7 +260,8 @@ template <> struct injester<base::bin> {
 template <byte_size size = byte_size::qword, base base = base::dec,
           bool sign = true>
 struct number {
-  using Value = num_type<size, sign>::value;
+  using ty = num_type<size, sign>;
+  using Value = ty::value;
 
   static result<Value> parse(buffer &buf) {
     bool neg = false;
@@ -265,6 +276,10 @@ struct number {
 
     while (injester.injest(*buf++))
       ;
+
+    if (injester.value > ty::MAX_VALUE) {
+      return std::unexpected(buf.make_error(code_t::overflow));
+    }
 
     Value v = static_cast<Value>(injester.value);
 

@@ -42,3 +42,10 @@ TEST(number, oct) {
   ASSERT_TRUE((bool)actual);
   EXPECT_EQ(actual, expected);
 }
+
+TEST(number, overflow) {
+  buffer buf{"300"};
+  const auto actual = number<byte_size::byte, base::dec, false>::parse(buf);
+
+  ASSERT_FALSE((bool)actual);
+}
