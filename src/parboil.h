@@ -61,6 +61,12 @@ template <size_t N> struct kstr {
     value[N - 1] = '\0';
   }
 
+  bool operator==(std::string_view view) const {
+    std::string_view me(value.data(), N - 1);
+
+    return me == view;
+  }
+
   static constexpr size_t size() { return N - 1; }
 };
 template <size_t N> kstr(const char (&)[N]) -> kstr<N>;
@@ -72,6 +78,10 @@ template <kstr T> struct keyword {
     auto sub = buf.slice(T.size());
     if (!sub)
       return sub;
+
+    if (!(T == sub.value())) {
+      return std::unexpected(buf.make_error(code_t::expected));
+    }
 
     buf += T.size();
     return sub;
