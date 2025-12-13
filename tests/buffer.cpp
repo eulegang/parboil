@@ -46,16 +46,16 @@ TEST(Buffer, slice) {
 TEST(Buffer, increment) {
   {
     parboil::buffer buf{"hello"};
-    EXPECT_EQ((buf++).slice(), "hello");
-    EXPECT_EQ(buf.slice(), "ello");
+    EXPECT_EQ((buf++), "hello");
+    EXPECT_EQ(buf, "ello");
 
     EXPECT_EQ(find_position(buf), 1);
   }
 
   {
     parboil::buffer buf{"hello"};
-    EXPECT_EQ((++buf).slice(), "ello");
-    EXPECT_EQ(buf.slice(), "ello");
+    EXPECT_EQ((++buf), "ello");
+    EXPECT_EQ(buf, "ello");
   }
 }
 
@@ -64,7 +64,7 @@ TEST(Buffer, forward_seek) {
     parboil::buffer buf{"hello"};
     buf += 3;
 
-    EXPECT_EQ(buf.slice(), "lo") << "should only have lo left";
+    EXPECT_EQ(buf, "lo") << "should only have lo left";
     EXPECT_EQ(find_position(buf), 3);
   }
 

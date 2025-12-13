@@ -43,6 +43,12 @@ char buffer::operator*() noexcept {
   return *rel;
 }
 
+bool buffer::operator==(std::string_view view) const noexcept {
+  std::string_view inner(rel, len);
+
+  return inner == view;
+}
+
 result<std::string_view> buffer::slice() const noexcept {
   return std::string_view(rel, len);
 }
@@ -55,6 +61,11 @@ result<std::string_view> buffer::slice(std::size_t sub_len) const noexcept {
   return std::string_view(rel, sub_len);
 }
 
-error_t buffer::make_error(code_t code) const noexcept {
+parboil::error_t buffer::make_error(code_t code) const noexcept {
   return (error_t){.code = code, .position = pos};
+}
+
+std::ostream &parboil::operator<<(std::ostream &os, const buffer &buf) {
+  std::string_view inner(buf.rel, buf.len);
+  return os << inner;
 }

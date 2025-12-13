@@ -9,7 +9,7 @@ TEST(Keyword, parse) {
   const auto result = keyword<"hello">::parse(buf);
 
   EXPECT_EQ(*result, "hello");
-  EXPECT_EQ(buf.slice(), ", world");
+  EXPECT_EQ(buf, ", world");
 }
 
 TEST(Keyword, parse_whole) {
@@ -18,5 +18,5 @@ TEST(Keyword, parse_whole) {
 
   ASSERT_TRUE((bool)result);
   EXPECT_EQ(*result, "hello");
-  EXPECT_EQ(buf.slice(), "");
+  EXPECT_EQ(buf, "");
 }

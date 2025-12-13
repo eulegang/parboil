@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdint>
 #include <expected>
+#include <iostream>
 #include <string_view>
 #include <vector>
 
@@ -33,8 +34,10 @@ struct buffer {
   buffer &operator+=(std::size_t) noexcept;
   buffer &operator++() noexcept;
   buffer operator++(int) noexcept;
+  bool operator==(std::string_view view) const noexcept;
   char operator*() noexcept;
   operator bool() noexcept;
+  friend std::ostream &operator<<(std::ostream &, const buffer &);
 
   error_t make_error(code_t) const noexcept;
   result<std::string_view> slice() const noexcept;
@@ -45,6 +48,8 @@ private:
   uint32_t len;
   uint32_t pos;
 };
+
+std::ostream &operator<<(std::ostream &, const buffer &);
 
 template <typename T>
 concept SubParser = requires(buffer &buf) {

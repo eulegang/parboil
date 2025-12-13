@@ -12,7 +12,7 @@ TEST(Sep, parse) {
 
   ASSERT_TRUE((bool)result);
   EXPECT_EQ(*result, expected);
-  EXPECT_EQ(buf.slice(), "");
+  EXPECT_EQ(buf, "");
 }
 
 TEST(SepEmpty, empty) {
@@ -23,7 +23,7 @@ TEST(SepEmpty, empty) {
 
   ASSERT_TRUE((bool)result);
   EXPECT_EQ(*result, expected);
-  EXPECT_EQ(buf.slice(), "");
+  EXPECT_EQ(buf, "");
 }
 
 TEST(SepNonempty, empty) {
@@ -31,5 +31,5 @@ TEST(SepNonempty, empty) {
   const auto result = sep<keyword<"1">, keyword<",">, true>::parse(buf);
 
   ASSERT_FALSE((bool)result);
-  EXPECT_EQ(buf.slice(), "");
+  EXPECT_EQ(buf, "");
 }
