@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <expected>
 #include <iostream>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -299,6 +300,22 @@ struct number {
     Value v = static_cast<Value>(injester.value);
 
     return neg ? -v : v;
+  }
+};
+
+template <SubParser T> struct opt {
+  using Value = std::optional<typename T::Value>;
+
+  static result<Value> parse(buffer &buf) {
+    buffer snapshot = buf;
+    auto res = T::parse(buf);
+
+    if (!res) {
+      buf = snapshot;
+      return std::nullopt;
+    } else {
+      return *res;
+    }
   }
 };
 
