@@ -9,6 +9,7 @@
 #include <optional>
 #include <string_view>
 #include <tuple>
+#include <variant>
 #include <vector>
 
 namespace parboil {
@@ -281,6 +282,7 @@ struct number {
   using Value = ty::value;
 
   static result<Value> parse(buffer &buf) {
+    buffer root(buf);
     bool neg = false;
     injester<base> injester;
 
@@ -291,10 +293,21 @@ struct number {
       }
     }
 
-    while (injester.injest(*buf++))
-      ;
+    size_t chars{};
+    buffer snapshot(buf);
+    while (injester.injest(*buf++)) {
+      snapshot = buf;
+      chars++;
+    }
+    buf = snapshot;
+
+    if (chars == 0) {
+      buf = root;
+      return std::unexpected(buf.make_error(code_t::expected));
+    }
 
     if (injester.value > ty::MAX_VALUE) {
+      buf = root;
       return std::unexpected(buf.make_error(code_t::overflow));
     }
 
@@ -387,6 +400,47 @@ template <bool (*T)(char, size_t)> struct pred {
       return res;
     }
   }
+};
+
+template <SubParser... T> struct alt {
+  using Value = std::variant<_GetSubParserValue<T>...>;
+
+  template <SubParser... P> struct _inner;
+  template <SubParser First, SubParser... Rest> struct _inner<First, Rest...> {
+    static result<Value> parse(buffer &buf) {
+      buffer snapshot(buf);
+
+      auto cur = First::parse(buf);
+
+      if (cur) {
+        return *cur;
+      }
+
+      buf = snapshot;
+      auto next = _inner<Rest...>::parse(buf);
+
+      if (next) {
+        return *next;
+      }
+
+      return std::unexpected(next.error());
+    }
+  };
+  template <SubParser P> struct _inner<P> {
+    static result<Value> parse(buffer &buf) {
+      buffer snapshot(buf);
+      auto only = P::parse(buf);
+
+      if (!only) {
+        buf = snapshot;
+        return std::unexpected(buf.make_error(code_t::expected));
+      }
+
+      return *only;
+    };
+  };
+
+  static result<Value> parse(buffer &buf) { return _inner<T...>::parse(buf); }
 };
 
 } // namespace parboil

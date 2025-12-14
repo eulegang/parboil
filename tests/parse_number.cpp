@@ -46,4 +46,13 @@ TEST(number, overflow) {
   const auto actual = number<byte_size::byte, base::dec, false>::parse(buf);
 
   ASSERT_FALSE((bool)actual);
+  EXPECT_EQ(buf, "300");
+}
+
+TEST(number, none) {
+  buffer buf{"*"};
+  const auto actual = number<byte_size::byte, base::dec, false>::parse(buf);
+
+  ASSERT_FALSE((bool)actual);
+  EXPECT_EQ(buf, "*");
 }
