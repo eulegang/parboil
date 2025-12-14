@@ -363,6 +363,32 @@ template <SubParser T> struct seq<T> {
   }
 };
 
+template <bool (*T)(char, size_t)> struct pred {
+  using Value = std::string_view;
+
+  static result<Value> parse(buffer &buf) {
+    buffer it(buf);
+    size_t index{};
+
+    while (it) {
+      if (!T(*it, index)) {
+        break;
+      }
+
+      it++;
+      index++;
+    }
+
+    if (index == 0) {
+      return std::unexpected(buf.make_error(code_t::expected));
+    } else {
+      auto res = buf.slice(index);
+      buf = it;
+      return res;
+    }
+  }
+};
+
 } // namespace parboil
 
 #endif
