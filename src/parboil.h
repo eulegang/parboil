@@ -18,6 +18,7 @@ enum class code_t : std::uint64_t {
   expected,
   oom,
   overflow,
+  incomplete,
 };
 
 struct error_t {
@@ -59,6 +60,22 @@ concept SubParser = requires(buffer &buf) {
   typename T::Value;
   { T::parse(buf) } -> std::same_as<result<typename T::Value>>;
 };
+
+template <SubParser T> T::Value parse(std::string_view view) {
+  buffer buf(view);
+
+  auto res = T::parse(buf);
+
+  if (!res) {
+    throw res.error();
+  }
+
+  if (buf) {
+    throw buf.make_error(code_t::incomplete);
+  }
+
+  return *res;
+}
 
 template <size_t N> struct kstr {
   std::array<char, N> value;
