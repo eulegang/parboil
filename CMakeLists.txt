@@ -10,3 +10,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(cmake/lib.cmake)
 include(cmake/test.cmake)
+include(cmake/install.cmake)
