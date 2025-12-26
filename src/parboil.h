@@ -460,6 +460,42 @@ template <SubParser... T> struct alt {
   static result<Value> parse(buffer &buf) { return _inner<T...>::parse(buf); }
 };
 
+template <SubParser T, bool nonempty = false> struct repeat {
+  using Value = std::vector<typename T::Value>;
+
+  static result<Value> parse(buffer &buf) {
+    Value value;
+    buffer snapshot = buf;
+
+    if (nonempty) {
+      const auto first = T::parse(buf);
+      if (!first) {
+        buf = snapshot;
+        return std::unexpected(first.error());
+      }
+
+      value.push_back(*first);
+    }
+
+    while (true) {
+      snapshot = buf;
+      const auto part = T::parse(buf);
+
+      if (!part) {
+        buf = snapshot;
+
+        if (nonempty && value.size() == 0) {
+          return std::unexpected(part.error());
+        } else {
+          return value;
+        }
+      }
+
+      value.push_back(*part);
+    }
+  }
+};
+
 } // namespace parboil
 
 #endif
